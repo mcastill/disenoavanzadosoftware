@@ -1,0 +1,277 @@
+@if (currentUser(); as user) {
+  <div class="min-h-screen bg-gray-100 text-gray-800">
+    <!-- Header -->
+    <header class="bg-white shadow-md">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-gray-900">
+          <span class="text-blue-600">Poli</span>Market <span class="text-lg font-normal text-gray-500">Punto de Venta</span>
+        </h1>
+        <div class="flex items-center gap-4">
+          <div class="text-right">
+            <p class="font-semibold text-gray-800">{{ user.name }}</p>
+            <p class="text-xs text-gray-500 capitalize">{{ user.role === 'admin' ? 'Administrador' : 'Vendedor' }}</p>
+          </div>
+          <button (click)="logout()" title="Cerrar Sesión" class="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="lg:grid lg:grid-cols-3 lg:gap-8">
+        
+        <!-- Product List (RF3: Consultar disponibilidad) -->
+        <div class="lg:col-span-2">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold text-gray-700">Catálogo de Productos</h2>
+            <div class="flex items-center gap-4">
+              @if(user.role === 'admin') {
+                <button (click)="openManageSellersModal()" class="flex items-center gap-2 bg-purple-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-purple-700 transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0110 13v-2.26A5 5 0 0112.258 6H14a3 3 0 11-3-3h-1.258A5 5 0 015 10v2.26A5 5 0 012.742 16H2a1 1 0 00-1 1v3a1 1 0 001 1h14a1 1 0 001-1v-3a1 1 0 00-1-1h-.07z" /></svg>
+                  Gestionar Vendedores
+                </button>
+              }
+              <button (click)="openAddProductModal()" class="flex items-center gap-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+                Añadir Producto
+              </button>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            @for (product of products(); track product.id) {
+              <div class="bg-white rounded-lg shadow-lg overflow-hidden transition-transform duration-300 hover:scale-105 flex flex-col">
+                <div class="relative">
+                  <img [src]="product.imageUrl" alt="{{ product.name }}" class="w-full h-40 object-cover">
+                  @if (product.stock <= 10 && product.stock > 0) {
+                    <span class="absolute top-2 left-2 bg-yellow-400 text-yellow-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">Poco Stock</span>
+                  }
+                  @if (product.stock === 0) {
+                    <span class="absolute top-2 left-2 bg-red-500 text-white text-xs font-semibold px-2.5 py-0.5 rounded-full">Agotado</span>
+                  }
+                </div>
+                <div class="p-4 flex flex-col flex-grow">
+                  <h3 class="font-semibold text-lg">{{ product.name }}</h3>
+                  <p class="text-gray-600 mt-1">${{ product.price.toFixed(2) }}</p>
+                  <p class="text-sm mt-1 text-gray-700">
+                    Stock: {{ product.stock }} unidades
+                  </p>
+                  <div class="mt-auto pt-4">
+                    <button (click)="addToCart(product)" [disabled]="product.stock === 0" class="w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed">
+                      Añadir al Carrito
+                    </button>
+                    <button (click)="openModal(product)" class="w-full mt-2 bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-md hover:bg-gray-300 transition-colors">
+                      Detalles
+                    </button>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Cart (RF2: Registrar venta) -->
+        <div class="lg:col-span-1 mt-12 lg:mt-0">
+          <div class="bg-white rounded-lg shadow-lg p-6 sticky top-8">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700 flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+              Carrito de Compras
+            </h2>
+            
+            @if (cart().length === 0) {
+              <p class="text-gray-500 text-center py-8">Tu carrito está vacío.</p>
+            } @else {
+              <div class="space-y-4 max-h-96 overflow-y-auto pr-2">
+                @for (item of cart(); track item.productId) {
+                  <div class="flex justify-between items-center">
+                    <div>
+                      <p class="font-semibold">{{ item.name }}</p>
+                      <p class="text-sm text-gray-500">${{ item.price.toFixed(2) }}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <button (click)="updateQuantity(item.productId, -1)" class="w-7 h-7 bg-gray-200 rounded-full hover:bg-gray-300">-</button>
+                      <span class="w-8 text-center font-medium">{{ item.quantity }}</span>
+                      <button (click)="updateQuantity(item.productId, 1)" class="w-7 h-7 bg-gray-200 rounded-full hover:bg-gray-300">+</button>
+                    </div>
+                  </div>
+                }
+              </div>
+              <div class="border-t mt-6 pt-4">
+                <div class="flex justify-between items-center font-bold text-lg">
+                  <span>Total</span>
+                  <span>${{ cartTotal().toFixed(2) }}</span>
+                </div>
+                <button (click)="checkout()" class="w-full mt-4 bg-green-600 text-white font-bold py-3 px-4 rounded-md hover:bg-green-700 transition-colors">
+                  Registrar Venta (RF2)
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Product Detail & AI Modal -->
+    @if (isModalOpen() && selectedProduct()) {
+      @let product = selectedProduct()!;
+      <div class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 transition-opacity" (click)="closeModal()">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg relative transform transition-all" (click)="$event.stopPropagation()">
+          <button (click)="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+          <div class="p-8">
+            <h2 class="text-2xl font-bold text-gray-900">{{ product.name }}</h2>
+            <p class="text-lg text-gray-500 mt-1">${{ product.price.toFixed(2) }}</p>
+            
+            <div class="flex items-baseline gap-2 mt-2">
+              <p class="text-gray-700 font-medium">Disponibilidad:</p>
+              @if(product.stock > 10) {
+                  <span class="font-semibold text-green-600">{{ product.stock }} unidades (En Stock)</span>
+              } @else if (product.stock > 0) {
+                  <span class="font-semibold text-orange-500">{{ product.stock }} unidades (Poco Stock)</span>
+              } @else {
+                  <span class="font-semibold text-red-600">Agotado</span>
+              }
+            </div>
+
+            <div class="mt-6">
+              <h3 class="font-semibold text-md text-gray-800">Descripción con IA de Gemini</h3>
+              <div class="mt-2 p-4 rounded-lg bg-gray-100 min-h-[100px] text-gray-700 italic">
+                @if (isGeneratingDescription()) {
+                  <div class="flex items-center justify-center h-full">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  </div>
+                } @else if(aiDescription()) {
+                  <p>{{ aiDescription() }}</p>
+                } @else {
+                  <p class="text-gray-400">Haz clic en el botón para generar una descripción de venta.</p>
+                }
+              </div>
+              @if (aiError()) {
+                  <p class="text-sm text-red-500 mt-2">{{ aiError() }}</p>
+                }
+              <button (click)="generateDescription()" [disabled]="isGeneratingDescription()" class="mt-4 w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold py-2 px-4 rounded-md hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-wait">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm6 0a1 1 0 011 1v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0V6h-1a1 1 0 110-2h1V3a1 1 0 011-1zM5 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM11 10a1 1 0 011 1v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1h-1a1 1 0 110-2h1v-1a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+                {{ isGeneratingDescription() ? 'Generando...' : 'Generar Descripción' }}
+              </button>
+            </div>
+            <div class="mt-6 pt-6 border-t border-gray-200">
+              <button (click)="addToCart(product)" [disabled]="product.stock === 0" class="w-full bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H4.72l-.38-1.52A1 1 0 003 1z" /></svg>
+                Añadir al Carrito
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Add Product Modal -->
+    @if (isAddProductModalOpen()) {
+      <div class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50" (click)="closeAddProductModal()">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg relative transform" (click)="$event.stopPropagation()">
+          <button (click)="closeAddProductModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+          <div class="p-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">Añadir Nuevo Producto</h2>
+            <form (submit)="$event.preventDefault(); addProduct()">
+              <div class="space-y-4">
+                <div>
+                  <label for="productName" class="block text-sm font-medium text-gray-700">Nombre del Producto</label>
+                  <input id="productName" type="text" [value]="newProduct().name" (input)="onNewProductNameChange($event)" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <label for="productPrice" class="block text-sm font-medium text-gray-700">Precio</label>
+                    <input id="productPrice" type="number" min="0.01" step="0.01" [value]="newProduct().price ?? ''" (input)="onNewProductPriceChange($event)" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                  </div>
+                  <div>
+                    <label for="productStock" class="block text-sm font-medium text-gray-700">Stock Inicial</label>
+                    <input id="productStock" type="number" min="0" step="1" [value]="newProduct().stock ?? ''" (input)="onNewProductStockChange($event)" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                  </div>
+                </div>
+                <div>
+                  <label for="productImageUrl" class="block text-sm font-medium text-gray-700">URL de la Imagen</label>
+                  <input id="productImageUrl" type="url" [value]="newProduct().imageUrl" (input)="onNewProductImageUrlChange($event)" placeholder="https://picsum.photos/400/300" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+              </div>
+              <div class="mt-8 flex justify-end gap-4">
+                <button type="button" (click)="closeAddProductModal()" class="bg-gray-200 text-gray-700 font-semibold py-2 px-6 rounded-md hover:bg-gray-300 transition-colors">
+                  Cancelar
+                </button>
+                <button type="submit" [disabled]="!isNewProductFormValid()" class="bg-blue-600 text-white font-semibold py-2 px-6 rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed">
+                  Guardar Producto
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Manage Sellers Modal (Admin only) -->
+    @if (isManageSellersModalOpen()) {
+      <div class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50" (click)="closeManageSellersModal()">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md relative transform" (click)="$event.stopPropagation()">
+          <button (click)="closeManageSellersModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+          <div class="p-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">Vendedores Registrados</h2>
+            <ul class="space-y-3 max-h-80 overflow-y-auto pr-2">
+              @for(seller of sellers(); track seller.username) {
+                <li class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <span class="font-medium text-gray-800">{{ seller.name }}</span>
+                  <span class="text-sm text-gray-500">{{ seller.username }}</span>
+                </li>
+              }
+            </ul>
+            <div class="mt-8 flex justify-end">
+              <button type="button" (click)="closeManageSellersModal()" class="bg-gray-200 text-gray-700 font-semibold py-2 px-6 rounded-md hover:bg-gray-300 transition-colors">
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+} @else {
+  <!-- Login Screen -->
+  <div class="min-h-screen bg-gray-100 flex flex-col justify-center items-center p-4">
+    <div class="w-full max-w-md">
+      <div class="text-center mb-8">
+        <h1 class="text-4xl font-bold text-gray-900">
+          <span class="text-blue-600">Poli</span>Market
+        </h1>
+        <p class="text-lg text-gray-500">Punto de Venta</p>
+      </div>
+      <div class="bg-white rounded-2xl shadow-xl p-8">
+        <h2 class="text-2xl font-semibold text-center text-gray-800 mb-6">Iniciar Sesión</h2>
+        <form (submit)="$event.preventDefault(); login()">
+          <div class="space-y-6">
+            <div>
+              <label for="username" class="block text-sm font-medium text-gray-700">Usuario</label>
+              <input id="username" type="text" [value]="loginUsername()" (input)="onLoginUsernameChange($event)" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+            </div>
+            <div>
+              <label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label>
+              <input id="password" type="password" [value]="loginPassword()" (input)="onLoginPasswordChange($event)" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+            </div>
+            @if(loginError()) {
+              <p class="text-sm text-red-600 bg-red-100 p-3 rounded-md">{{ loginError() }}</p>
+            }
+          </div>
+          <div class="mt-8">
+            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+              Ingresar
+            </button>
+          </div>
+        </form>
+      </div>
+      <p class="text-center text-xs text-gray-500 mt-4">Demo: mariocas (admin), jabuitrago (vendedor). Pass: 123</p>
+    </div>
+  </div>
+}

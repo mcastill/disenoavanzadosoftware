@@ -1,0 +1,5 @@
+{
+  "name": "PoliMarket Point of Sale",
+  "description": "A sleek point-of-sale application for PoliMarket sellers to manage sales, check inventory, and generate AI-powered product descriptions, based on the provided software architecture.",
+  "requestFramePermissions": []
+}
