@@ -214,24 +214,56 @@
     <!-- Manage Sellers Modal (Admin only) -->
     @if (isManageSellersModalOpen()) {
       <div class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50" (click)="closeManageSellersModal()">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md relative transform" (click)="$event.stopPropagation()">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg relative transform" (click)="$event.stopPropagation()">
           <button (click)="closeManageSellersModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
           <div class="p-8">
-            <h2 class="text-2xl font-bold text-gray-900 mb-6">Vendedores Registrados</h2>
-            <ul class="space-y-3 max-h-80 overflow-y-auto pr-2">
-              @for(seller of sellers(); track seller.username) {
-                <li class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <span class="font-medium text-gray-800">{{ seller.name }}</span>
-                  <span class="text-sm text-gray-500">{{ seller.username }}</span>
-                </li>
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">Gestionar Vendedores</h2>
+            
+            <div class="max-h-60 overflow-y-auto pr-2 mb-6">
+              @if(sellers().length > 0) {
+                <ul class="space-y-3">
+                  @for(seller of sellers(); track seller.username) {
+                    <li class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100">
+                      <div>
+                        <span class="font-medium text-gray-800">{{ seller.name }}</span>
+                        <span class="block text-sm text-gray-500">{{ seller.username }}</span>
+                      </div>
+                      <button (click)="deleteSeller(seller.username)" title="Eliminar Vendedor" class="p-2 rounded-full text-gray-400 hover:bg-red-100 hover:text-red-600 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>
+                      </button>
+                    </li>
+                  }
+                </ul>
+              } @else {
+                <p class="text-center text-gray-500 py-4">No hay vendedores registrados.</p>
               }
-            </ul>
-            <div class="mt-8 flex justify-end">
-              <button type="button" (click)="closeManageSellersModal()" class="bg-gray-200 text-gray-700 font-semibold py-2 px-6 rounded-md hover:bg-gray-300 transition-colors">
-                Cerrar
-              </button>
+            </div>
+
+            <!-- Add Seller Form -->
+            <div class="pt-6 border-t">
+              <h3 class="text-lg font-semibold text-gray-800 mb-4">Añadir Nuevo Vendedor</h3>
+              <form (submit)="$event.preventDefault(); addSeller()">
+                <div class="space-y-4">
+                  <div>
+                    <label for="sellerName" class="block text-sm font-medium text-gray-700">Nombre Completo</label>
+                    <input id="sellerName" type="text" [value]="newSeller().name" (input)="onNewSellerNameChange($event)" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500">
+                  </div>
+                  <div>
+                    <label for="sellerUsername" class="block text-sm font-medium text-gray-700">Nombre de Usuario</label>
+                    <input id="sellerUsername" type="text" [value]="newSeller().username" (input)="onNewSellerUsernameChange($event)" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500">
+                  </div>
+                  @if(addSellerError()) {
+                    <p class="text-sm text-red-600 bg-red-100 p-3 rounded-md">{{ addSellerError() }}</p>
+                  }
+                </div>
+                <div class="mt-6 flex justify-end">
+                  <button type="submit" [disabled]="!isNewSellerFormValid()" class="bg-purple-600 text-white font-semibold py-2 px-6 rounded-md hover:bg-purple-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed">
+                    Añadir Vendedor
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>

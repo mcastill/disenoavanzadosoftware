@@ -13,15 +13,15 @@ import { GeminiService } from './services/gemini.service';
 export class AppComponent {
   private geminiService = inject(GeminiService);
 
-  private readonly users: User[] = [
+  // --- State Signals ---
+  private users = signal<User[]>([
     { username: 'mariocas', password: '123', role: 'admin', name: 'Mario Casas' },
     { username: 'jabuitrago', password: '123', role: 'seller', name: 'J. A. Buitrago' },
     { username: 'jleal', password: '123', role: 'seller', name: 'J. Leal' },
     { username: 'jpineda', password: '123', role: 'seller', name: 'J. Pineda' },
     { username: 'kgonzales', password: '123', role: 'seller', name: 'K. Gonzales' },
-  ];
-
-  // --- State Signals ---
+  ]);
+  
   products = signal<Product[]>([
     { id: 'p1', name: 'Café Colombiano', price: 15.50, stock: 50, imageUrl: 'https://picsum.photos/id/1060/400/300' },
     { id: 'p2', name: 'Teclado Mecánico', price: 120.00, stock: 25, imageUrl: 'https://picsum.photos/id/5/400/300' },
@@ -53,6 +53,10 @@ export class AppComponent {
   loginUsername = signal('');
   loginPassword = signal('');
   loginError = signal<string | null>(null);
+  
+  // New Seller State
+  newSeller = signal<{ name: string; username: string }>({ name: '', username: '' });
+  addSellerError = signal<string | null>(null);
 
 
   constructor() {
@@ -69,7 +73,7 @@ export class AppComponent {
   // --- Computed Signals ---
   cartTotal = computed(() => this.cart().reduce((acc, item) => acc + item.price * item.quantity, 0));
   cartItemCount = computed(() => this.cart().reduce((acc, item) => acc + item.quantity, 0));
-  sellers = computed(() => this.users.filter(u => u.role === 'seller'));
+  sellers = computed(() => this.users().filter(u => u.role === 'seller'));
 
   isNewProductFormValid = computed(() => {
     const p = this.newProduct();
@@ -79,6 +83,11 @@ export class AppComponent {
       p.stock != null && p.stock >= 0 &&
       p.imageUrl.trim() !== ''
     );
+  });
+  
+  isNewSellerFormValid = computed(() => {
+    const s = this.newSeller();
+    return s.name.trim() !== '' && s.username.trim() !== '';
   });
   
   // --- Methods ---
@@ -130,7 +139,7 @@ export class AppComponent {
   
   // Auth
   login(): void {
-    const user = this.users.find(
+    const user = this.users().find(
       u => u.username === this.loginUsername() && u.password === this.loginPassword()
     );
 
@@ -277,10 +286,49 @@ export class AppComponent {
 
   // Manage Sellers (Admin)
   openManageSellersModal(): void {
+    this.addSellerError.set(null); // Reset on open
     this.isManageSellersModalOpen.set(true);
   }
 
   closeManageSellersModal(): void {
     this.isManageSellersModalOpen.set(false);
+  }
+  
+  onNewSellerNameChange(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.newSeller.update(s => ({ ...s, name: value }));
+    this.addSellerError.set(null);
+  }
+
+  onNewSellerUsernameChange(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.newSeller.update(s => ({ ...s, username: value }));
+     this.addSellerError.set(null);
+  }
+
+  addSeller(): void {
+    if (!this.isNewSellerFormValid()) return;
+    const { name, username } = this.newSeller();
+
+    if (this.users().some(u => u.username.toLowerCase() === username.toLowerCase())) {
+      this.addSellerError.set('El nombre de usuario ya existe.');
+      return;
+    }
+
+    const sellerToAdd: User = {
+      name,
+      username,
+      password: '123', // Default password
+      role: 'seller',
+    };
+    this.users.update(currentUsers => [...currentUsers, sellerToAdd]);
+    this.newSeller.set({ name: '', username: '' });
+    this.addSellerError.set(null);
+  }
+
+  deleteSeller(usernameToDelete: string): void {
+    this.users.update(currentUsers =>
+      currentUsers.filter(u => u.username !== usernameToDelete)
+    );
   }
 }
